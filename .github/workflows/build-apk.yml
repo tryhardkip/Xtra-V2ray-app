@@ -22,6 +22,10 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Skip the obsolete `tools` package (removed from the SDK repo).
+          # The Android Gradle Plugin auto-downloads the platform + build-tools.
+          packages: ''
 
       - name: Install Android NDK
         run: |
