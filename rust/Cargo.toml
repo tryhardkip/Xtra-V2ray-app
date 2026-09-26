@@ -1,0 +1,55 @@
+[package]
+name = "fkcore"
+version = "0.1.0"
+edition = "2021"
+description = "JNI bindings that run the leaf proxy engine inside the Android app."
+
+[lib]
+name = "fkcore"
+crate-type = ["cdylib"]
+
+[dependencies]
+# JNI bridge so Kotlin `external fun`s map straight to these symbols.
+jni = { version = "0.21", default-features = false }
+# Log bridge to Android logcat.
+log = "0.4"
+android_logger = "0.14"
+
+[dependencies.leaf]
+# Pinned git dependency so a fresh clone / CI builds without a local checkout.
+git = "https://github.com/eycorsican/leaf.git"
+rev = "5e8d94759ce983eb8ac226c315024b55ff2bb7b0"
+default-features = false
+features = [
+    "config-conf",
+    "config-json",
+    "ring-aead",
+    "rustls-tls",
+    "rustls-tls-ring",
+    "inbound-socks",
+    "inbound-http",
+    "inbound-tun",
+    "outbound-direct",
+    "outbound-drop",
+    "outbound-shadowsocks",
+    "outbound-socks",
+    "outbound-trojan",
+    "outbound-vmess",
+    "outbound-vless",
+    "outbound-tls",
+    "outbound-ws",
+    "outbound-failover",
+    "outbound-chain",
+]
+
+# tokio macros feature needed by leaf under this trimmed feature set.
+[dependencies.tokio]
+version = "1"
+features = ["macros", "rt", "rt-multi-thread"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
