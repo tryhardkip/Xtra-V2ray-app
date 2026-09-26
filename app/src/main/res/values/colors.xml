@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AMOLED / OLED: pure black so unlit pixels stay off. -->
+    <color name="amoled_black">#FF000000</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FFB0B0B0</color>
+    <color name="accent">#FF00E5B0</color>
+    <color name="edit_bg">#FF0A0A0A</color>
+</resources>
