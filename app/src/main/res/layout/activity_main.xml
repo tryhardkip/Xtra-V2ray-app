@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingBottom="4dp"
-        android:text="Proxy config ([Proxy] / [Rule]):" />
+        android:text="Paste vless:// link or leaf config:" />
 
     <EditText
         android:id="@+id/configBox"
@@ -31,9 +31,16 @@
         android:textSize="13sp" />
 
     <Button
-        android:id="@+id/toggle"
+        android:id="@+id/importBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
+        android:text="Import link" />
+
+    <Button
+        android:id="@+id/toggle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:text="Connect" />
 </LinearLayout>

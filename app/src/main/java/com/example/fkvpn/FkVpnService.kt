@@ -11,6 +11,8 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import java.io.File
 import kotlin.concurrent.thread
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * The VPN service. This is the piece that can only live in the Android SDK
@@ -129,8 +131,46 @@ class FkVpnService : VpnService() {
         super.onDestroy()
     }
 
-    /** Writes the leaf .conf, injecting the live tun fd and the user's proxy block. */
+    /**
+     * Writes the leaf config, injecting the live tun fd.
+     *
+     * Two formats are supported and auto-detected:
+     *  - JSON (starts with `{`): a leaf JSON config with an "outbounds" array,
+     *    as produced by [LinkParser] from a share link. We add the tun inbound,
+     *    dns and log here. Written as `.json` so leaf uses its JSON parser.
+     *  - .conf (anything else): the classic [Proxy]/[Rule] block. We prepend
+     *    [General] with the tun-fd. Written as `.conf`.
+     */
     private fun writeConfig(tunFd: Int, proxyConf: String): File {
+        val body = proxyConf.trim()
+        return if (body.startsWith("{")) {
+            writeJsonConfig(tunFd, body)
+        } else {
+            writeConfConfig(tunFd, body)
+        }
+    }
+
+    private fun writeJsonConfig(tunFd: Int, body: String): File {
+        val root = JSONObject(body)
+
+        root.put("log", JSONObject().put("level", "info"))
+        root.put(
+            "dns",
+            JSONObject().put("servers", JSONArray().put("1.1.1.1").put("8.8.8.8"))
+        )
+        // The tun inbound consumes the fd from VpnService.establish().
+        val tunInbound = JSONObject()
+            .put("protocol", "tun")
+            .put("tag", "tun_in")
+            .put("settings", JSONObject().put("fd", tunFd).put("mtu", 1500))
+        root.put("inbounds", JSONArray().put(tunInbound))
+
+        val f = File(filesDir, "fkvpn.json")
+        f.writeText(root.toString())
+        return f
+    }
+
+    private fun writeConfConfig(tunFd: Int, proxyConf: String): File {
         val defaultProxy = """
             [Proxy]
             Direct = direct

@@ -81,12 +81,46 @@ installed and enough space):
 
 ## Using
 
-1. Launch the app, edit the `[Proxy]`/`[Rule]` box with a server you own or
-   trust, tap **Connect**, and accept the system VPN consent dialog.
-2. All device traffic is routed into the engine and out through the configured
-   outbound.
+1. Launch the app.
+2. Paste a share link (`vless://`, `vmess://`, `trojan://`, `ss://`) into the
+   config box and tap **Import link** to convert it to a leaf config you can
+   review, then **Connect**. (Pasted links are also auto-converted if you tap
+   Connect directly.)
+3. Or write a leaf `.conf` block directly (see reference below).
+4. Accept the system VPN consent dialog. All device traffic is then routed into
+   the engine and out through the configured outbound.
+
+### Importing a `vless://` (etc.) link
+
+The importer parses the link and emits a leaf **JSON** config with an explicit
+transport chain, e.g. a `vless` link with `type=ws&security=none` becomes:
+
+```json
+{
+  "outbounds": [
+    { "protocol": "chain", "tag": "proxy", "settings": { "actors": ["proxy_ws", "proxy_core"] } },
+    { "protocol": "ws", "tag": "proxy_ws", "settings": { "path": "/path", "headers": { "Host": "cdn.example.com" } } },
+    { "protocol": "vless", "tag": "proxy_core", "settings": { "address": "HOST", "port": 80, "uuid": "UUID" } },
+    { "protocol": "direct", "tag": "direct" }
+  ]
+}
+```
+
+The `proxy` chain is emitted first, so leaf uses it as the default handler and
+all captured traffic flows through it. The tun inbound (with the live fd), DNS
+and log sections are injected by the app at connect time.
+
+Supported: `type=tcp` and `type=ws`; `security=none`, `security=tls`. Mux
+(amux) is never emitted, so multiplexing stays disabled. `security=reality`
+links parse but require the Rust core to be built with the `outbound-reality`
+feature (not enabled in the default build). `flow=xtls-rprx-vision` is not
+supported by leaf's config.
 
 ### Config reference (leaf .conf)
+
+Instead of a link you can write a `.conf` block directly. Note the `.conf`
+format only wires TLS/WS transports for VMess/Trojan; for VLESS-over-WS/TLS use
+the link importer (which emits JSON) instead.
 
 ```
 [Proxy]
@@ -102,7 +136,9 @@ FINAL, Trojan
 ```
 
 The app injects `[General]` with the live `tun-fd` at connect time, so only
-`[Proxy]`/`[Rule]` go in the config box.
+`[Proxy]`/`[Rule]` go in the config box. A pasted JSON config (from the
+importer) is detected automatically and the tun inbound is injected there
+instead.
 
 ## Security note
 
